@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Incident Report Ordering – Background / Facts / Outcome</title>
+<style>
+  :root{
+    --bg:#f7f8fb; --card:#eef3ff; --card-border:#8aa3ff; --panel:#fff;
+    --text:#222; --muted:#667; --primary:#4a6cff; --primary-dark:#3e57cc;
+    --ok:#d4ffd4; --ok-border:#2e9b2e; --bad:#ffe1e1; --bad-border:#c74a4a;
+  }
+  body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; background:var(--bg); color:var(--text);}
+  header{padding:18px 20px;}
+  h1{margin:0 0 6px;}
+  .wrap{padding:0 20px 30px;}
+  .controls{display:flex; gap:10px; flex-wrap:wrap; margin:10px 0 18px;}
+  button{background:var(--primary); color:#fff; border:none; border-radius:8px; padding:10px 14px; font-size:15px; cursor:pointer;}
+  button:hover{background:var(--primary-dark);}
+  button.secondary{background:#e6e9f7; color:#1f2a5c;}
+  button.secondary:hover{background:#d6daf3;}
+  .board{display:grid; gap:16px;}
+  @media(min-width:960px){ .board{grid-template-columns: 1fr 1fr 1fr;} }
+  .panel{background:var(--panel); border-radius:12px; box-shadow:0 1px 6px rgba(0,0,0,.08); padding:14px;}
+  .panel h2{margin:0 0 10px; font-size:1.1rem;}
+  .sub{color:var(--muted); font-size:.95rem; margin:0 0 10px;}
+  .pool{min-height:120px; display:grid; gap:8px;}
+  .cards{display:grid; gap:8px;}
+  .card{
+    background:var(--card); border:1px solid var(--card-border); border-radius:10px;
+    padding:10px; cursor:grab; user-select:none; line-height:1.25;
+  }
+  .card:active{cursor:grabbing;}
+  .card .tag{font-weight:700; margin-right:6px;}
+  .slots{display:grid; gap:8px;}
+  .slot{
+    border:2px dashed #9aa; min-height:48px; border-radius:10px; padding:8px;
+    display:flex; align-items:center; justify-content:flex-start; background:#fafbff;
+    position:relative;
+  }
+  .slot .num{
+    position:absolute; top:-10px; left:10px; background:#fff; border:1px solid #9aa;
+    border-radius:12px; padding:1px 8px; font-size:12px; color:#445;
+  }
+  .slot.highlight{border-color:var(--primary); background:#f1f4ff;}
+  .slot.ok{background:var(--ok); border-color:var(--ok-border);}
+  .slot.bad{background:var(--bad); border-color:var(--bad-border);}
+  .legend{font-size:.95rem; color:var(--muted);}
+  .feedback{margin-top:8px; font-weight:700;}
+  .feedback.ok{color:#1b7a1b;}
+  .feedback.no{color:#9b2c2c;}
+  .tip{font-size:.95rem; color:var(--muted); margin-top:6px;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Incident Report Ordering</h1>
+  <div class="legend">Drag each sentence into the correct <b>Background</b>, <b>Facts</b>, or <b>Outcome</b> column, and place it in the correct order within that column.</div>
+  <div class="controls">
+    <button onclick="checkAll()">Check</button>
+    <button class="secondary" onclick="resetAll(true)">Reset & Shuffle</button>
+    <button class="secondary" onclick="resetAll(false)">Reset (keep order)</button>
+    <button onclick="showAnswer()">Show Answer</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <!-- POOL -->
+  <section class="panel">
+    <h2>Card Pool</h2>
+    <p class="sub">Drag from here into the three columns. You can drop a card back here to remove it from a slot.</p>
+    <div id="pool" class="pool slot" ondragover="allowDrop(event)" ondragleave="clearHighlight(event)" ondrop="dropTo(event)">
+      <!-- Cards will be inserted here by script -->
+    </div>
+  </section>
+
+  <!-- BOARD -->
+  <section class="board">
+    <!-- Background Column -->
+    <div class="panel">
+      <h2>Background</h2>
+      <p class="sub">Place these 4 items in order (1 → 4).</p>
+      <div class="slots">
+        <div id="B_1" class="slot" ondragover="allowDrop(event)" ondragleave="clearHighlight(event)" ondrop="dropTo(event)"><span class="num">1</span></div>
+        <div id="B_2" class="slot" ondragover="allowDrop(event)" ondragleave="clearHighlight(event)" ondrop="dropTo(event)"><span class="num">2</span></div>
+        <div id="B_3" class="slot" ondragover="allowDrop(event)" ondragleave="clearHighlight(event)" ondrop="dropTo(event)"><span class="num">3</span></div>
+        <div id="B_4" class="slot" ondragover="allowDrop(event)" ondragleave="clearHighlight(event)" ondrop="dropTo(event)"><span class="num">4</span></div>
+      </div>
+      <div id="fb_B" class="feedback"></div>
+    </div>
+
+    <!-- Facts Column -->
+    <div class="panel">
+      <h2>Facts</h2>
+      <p class="sub">Place these 7 items in chronological order (1 → 7).</p>
+      <div class="slots">
+        <div id="F_1" class="slot" ondragover="allowDrop(event)" ondragleave="clearHighlight(event)" ondrop="dropTo(event)"><span class="num">1</span></div>
+        <div id="F_2" class="slot" ondragover="allowDrop(event)" ondragleave="clearHighlight(event)" ondrop="dropTo(event)"><span class="num">2</span></div>
+        <div id="F_3" class="slot" ondragover="allowDrop(event)" ondragleave="clearHighlight(event)" ondrop="dropTo(event)"><span class="num">3</span></div>
+        <div id="F_4" class="slot" ondragover="allowDrop(event)" ondragleave="clearHighlight(event)" ondrop="dropTo(event)"><span class="num">4</span></div>
+        <div id="F_5" class="slot" ondragover="allowDrop(event)" ondragleave="clearHighlight(event)" ondrop="dropTo(event)"><span class="num">5</span></div>
+        <div id="F_6" class="slot" ondragover="allowDrop(event)" ondragleave="clearHighlight(event)" ondrop="dropTo(event)"><span class="num">6</span></div>
+        <div id="F_7" class="slot" ondragover="allowDrop(event)" ondragleave="clearHighlight(event)" ondrop="dropTo(event)"><span class="num">7</span></div>
+      </div>
+      <div id="fb_F" class="feedback"></div>
+    </div>
+
+    <!-- Outcome Column -->
+    <div class="panel">
+      <h2>Outcome</h2>
+      <p class="sub">Place these 5 items in logical order (1 → 5).</p>
+      <div class="slots">
+        <div id="O_1" class="slot" ondragover="allowDrop(event)" ondragleave="clearHighlight(event)" ondrop="dropTo(event)"><span class="num">1</span></div>
+        <div id="O_2" class="slot" ondragover="allowDrop(event)" ondragleave="clearHighlight(event)" ondrop="dropTo(event)"><span class="num">2</span></div>
+        <div id="O_3" class="slot" ondragover="allowDrop(event)" ondragleave="clearHighlight(event)" ondrop="dropTo(event)"><span class="num">3</span></div>
+        <div id="O_4" class="slot" ondragover="allowDrop(event)" ondragleave="clearHighlight(event)" ondrop="dropTo(event)"><span class="num">4</span></div>
+        <div id="O_5" class="slot" ondragover="allowDrop(event)" ondragleave="clearHighlight(event)" ondrop="dropTo(event)"><span class="num">5</span></div>
+      </div>
+      <div id="fb_O" class="feedback"></div>
+    </div>
+  </section>
+
+  <p class="tip">Tip: Long‑press a card on touch screens to drag it. You can drop a card back into the Pool to remove it from a slot.</p>
+</div>
+
+<script>
+/* ---------- Data (from your key) ---------- */
+const items = [
+  // letter, category, orderInColumn, text
+  // Background (4)
+  {id:"l", cat:"B", pos:1, text:"The MV Azure Horizon is a luxury cruise ship who has a length of 333 meters and a width of 45 meters. The MV Azure Horizon is equipped with three Azipod engines."},
+  {id:"g", cat:"B", pos:2, text:"She left the port of Barcelona, Spain, on May 30, 2023. There were 1800 crewmembers and 3200 passengers on board."},
+  {id:"o", cat:"B", pos:3, text:"On June 8, she arrived at her destination, the port of Athens. It was a sunny afternoon with little to no swell. The wind was 7 knots from the east. The current in the harbor was 3 knots."},
+  {id:"k", cat:"B", pos:4, text:"At 15:00, the captain and the port pilot, were on the bridge. The cook was cleaning the dishes in the galley. Valeria Santos, a passenger, was showering in her cabin."},
+
+  // Facts (7)
+  {id:"h", cat:"F", pos:1, text:"At 1500, the captain was on the bridge. At 1524, the pilot boat was alongside the ship. At 1530 the port pilot was on board the MV Azure Horizon."},
+  {id:"n", cat:"F", pos:2, text:"At 1615, the pilot started the docking maneuver. At 1625, the pilot began the 180-degree maneuver to park between the SS Celestial Serenade and the MV Romano Faffar."},
+  {id:"p", cat:"F", pos:3, text:"At 1632, the port azipod shut down. At 1633 The captain made a call to the engine room and ordered to continue with the maneuver. At 1635, the chief engineer noticed that the starboard azipod overheating light was on and notified the captain."},
+  {id:"e", cat:"F", pos:4, text:"At 1640, the starboard azipod shut down."},
+  {id:"a", cat:"F", pos:5, text:"At 1641, the captain issued a mayday call on channel 16 and port channel 9. At 1642, the captain warned the passengers over the ship's intercom and ordered the emergency response team to get ready."},
+  {id:"i", cat:"F", pos:6, text:"At 1643, the captain attempted to contact the SS Celestial Serenade to warn her captain that the MZ Azure Horizon was heading towards their ship. At this moment, the cook was carrying clean dish next to the over and Valeria Santos was still in the shower."},
+  {id:"b", cat:"F", pos:7, text:"At 1645, the MZ Azure Horizon’s starboard side collided with SS Celestial Serenade on her port side. With the collision, both the cook and the passenger fell. At 1649, the emergency response team was in action. At 1650, port authorities were notified of the incident."},
+
+  // Outcome (5)
+  {id:"d", cat:"O", pos:1, text:"After further investigation, the malfunction of both azipods was caused by overheating. One of the cooling system filters was not properly replaced after the engine cadet cleaned it. This caused a malfunction in the cooling system, which then caused the Azipod to overheat."},
+  {id:"j", cat:"O", pos:2, text:"Two people were injured during the incident. The cook who was in the kitchen received a pot that was on the stove on his left side and has bruised ribs. Passenger Santos, who fell in the shower, has a sprained wrist."},
+  {id:"m", cat:"O", pos:3, text:"Both the cook and the passenger who needed medical attention received the help they needed from our medical team. No one required to be taken to the hospital."},
+  {id:"c", cat:"O", pos:4, text:"The hull plating on the starboard side was damaged. Minor damage to the superstructure was also reported."},
+  {id:"f", cat:"O", pos:5, text:"The ship will remain in the port of Athens to be repaired for approximately 12 weeks. The company should contact the families of the injured to inform them of the accident and its repercussions."}
+];
+
+// Build answer map: "B_1" -> "item_l", etc.
+const answerMap = {};
+items.forEach(it => answerMap[`${it.cat}_${it.pos}`] = `item_${it.id}`);
+
+// Utility: shuffle array
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+  return arr;
+}
+
+/* ---------- Drag & Drop ---------- */
+function allowDrop(ev){
+  ev.preventDefault();
+  const el = ev.currentTarget;
+  if(el.classList.contains('slot')) el.classList.add('highlight');
+}
+function clearHighlight(ev){
+  const el = ev.currentTarget;
+  if(el.classList.contains('slot')) el.classList.remove('highlight');
+}
+function drag(ev){ ev.dataTransfer.setData("text/plain", ev.currentTarget.id); }
+function dropTo(ev){
+  ev.preventDefault();
+  const target = ev.currentTarget;
+  const cardId = ev.dataTransfer.getData("text/plain");
+  const card = document.getElementById(cardId);
+  if(!card) return;
+
+  // If target slot already has a child card, move it back to the pool (swap-out)
+  if(target.classList.contains('slot')){
+    target.classList.remove('highlight');
+    const existing = Array.from(target.children).find(ch => ch.classList && ch.classList.contains('card'));
+    if(existing){ document.getElementById('pool').appendChild(existing); }
+  }
+  target.appendChild(card);
+}
+
+/* ---------- Build UI ---------- */
+function createCard(it){
+  const d = document.createElement('div');
+  d.id = `item_${it.id}`;
+  d.className = 'card';
+  d.draggable = true;
+  d.ondragstart = drag;
+  d.setAttribute('data-cat', it.cat);
+  d.setAttribute('data-pos', it.pos);
+  d.setAttribute('data-id', it.id);
+  d.innerHTML = `<span class="tag">${it.id}.</span> ${it.text}`;
+  return d;
+}
+function populatePool(shuffleIt=true){
+  const pool = document.getElementById('pool');
+  // Move any cards from slots back to pool
+  document.querySelectorAll('.slot').forEach(slot=>{
+    if(slot.id!=='pool'){
+      const card = slot.querySelector('.card');
+      if(card) pool.appendChild(card);
+      slot.classList.remove('ok','bad','highlight');
+    }
+  });
+  // Clear pool (cards will be re-added)
+  const cards = items.map(createCard);
+  const order = shuffleIt ? shuffle(cards) : cards;
+  pool.innerHTML = '';
+  order.forEach(c => pool.appendChild(c));
+
+  // Clear feedback
+  ['B','F','O'].forEach(c => {
+    const fb = document.getElementById(`fb_${c}`);
+    if(fb){ fb.textContent=''; fb.className='feedback'; }
+  });
+}
+
+/* ---------- Checking ---------- */
+function checkColumn(prefix, total){
+  let correct = true, filled = true;
+  for(let i=1;i<=total;i++){
+    const slot = document.getElementById(`${prefix}_${i}`);
+    slot.classList.remove('ok','bad','highlight');
+    const expected = answerMap[`${prefix}_${i}`];
+    const card = slot.querySelector('.card');
+    if(!card){ filled = false; correct = false; continue; }
+    if(card.id === expected){ slot.classList.add('ok'); }
+    else { slot.classList.add('bad'); correct = false; }
+  }
+  const fb = document.getElementById(`fb_${prefix[0]}`);
+  if(!fb) return correct;
+  if(!filled){
+    fb.textContent = "⚠ Some slots are empty in this column.";
+    fb.className = "feedback no";
+  } else if(correct){
+    fb.textContent = "✔ Perfect! All items are in the right order.";
+    fb.className = "feedback ok";
+  } else {
+    fb.textContent = "✘ Some items are misplaced or out of order.";
+    fb.className = "feedback no";
+  }
+  return correct;
+}
+
+function checkAll(){
+  const okB = checkColumn('B',4);
+  const okF = checkColumn('F',7);
+  const okO = checkColumn('O',5);
+  if(okB && okF && okO){
+    alert('🎉 Great job! All columns are correct.');
+  }
+}
+
+function resetAll(shuffleIt=true){
+  populatePool(shuffleIt);
+}
+
+function showAnswer(){
+  // First reset (no shuffle) to ensure all cards present
+  populatePool(false);
+  // Place each card to the correct slot by answerMap
+  Object.entries(answerMap).forEach(([slotId, cardId])=>{
+    const slot = document.getElementById(slotId);
+    const card = document.getElementById(cardId);
+    if(slot && card) slot.appendChild(card);
+  });
+  // Mark correct
+  checkAll();
+}
+
+/* ---------- Init ---------- */
+window.addEventListener('DOMContentLoaded', ()=> populatePool(true));
+</script>
+
+</body>
+</html>
